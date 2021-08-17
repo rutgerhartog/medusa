@@ -1,0 +1,46 @@
+apiVersion: mic.kubernetes.io/v1
+kind: MICRoute
+metadata:
+  name: cyberchef
+spec:
+  description: This MIC route sets
+  type: http
+  entrypoints:
+    - public # port 8443
+    - internal # port 443
+  void:
+    url: sinkhole.infer.local
+    port: 443
+    scheme: http
+  addons:
+    - name: SNI
+      args:
+        list:
+          - host: cyberchef.infer.local
+            upstream:
+              scheme: http
+              url: cyberchef.svc
+              port: 80
+    - name: checkHeader
+      args:
+        header_name: User-Agent
+        whitelist:
+          - Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:91.0) Gecko/20100101 Firefox/91.0
+    - name: mTLS
+      args:
+        ca: /container/secrets/ca.crt
+    - name: interceptCDNRequests
+      args:
+        uri: https://cdn.infer.local
+    - name: logTraffic
+      args:
+        type: http
+        http:
+          include_response: true
+    - name: injectTracker
+      args: []
+    - name: whitelist
+      args:
+        ipAddress:
+          - fd00::/8
+          - 2001:984f:d0ce::/48
